@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+    <title>Socket.IO chat</title>
+    <link rel="shortcut icon" href="images/Graphicloads-100-Flat-2-Chat-2.ico">
+    <link rel="shortcut icon" href="images/signupback.jpg">
+    <link rel="shortcut icon" href="images/wp.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!--<link href="style.css" rel="stylesheet" />-->
+    <style>
+    body { background-image: url("images/signupback.jpg"); font-family: Arial, Helvetica, sans-serif; }
+
+        header {
+            background-color: darkcyan;
+            display: block;
+            color: black;
+            text-align: center;
+            width: 100%;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .input-container {
+            display: -ms-flexbox;
+            display: flex;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .icon {
+            padding: 10px;
+            background-color: darkcyan;
+            color: white;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            outline: none;
+        }
+
+            .input-field:focus {
+                border: 2px solid dodgerblue;
+            }
+
+        /* Set a style for the submit button */
+        .btn {
+            background-color: darkcyan;
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            opacity: 0.9;
+        }
+
+        button:hover {
+            background-color: firebrick;
+        }
+
+        i:hover {
+            background-color: firebrick;
+        }
+
+
+        .back {
+            background-color: whitesmoke;
+            width: 42%;
+            border: ridge;
+            border-radius: 2px;
+        }
+    </style>
+    <script src="js/jquery-3.4.1.min.js"></script>
+    <script>
+        var oPosition = null;
+
+        $(function () {
+            getLocation();
+            $('#btnSignUp').click(function () {
+                var oUserInfo = { "latitude": oPosition.latitude, "longitude": oPosition.longitude, "userId": $('#txtUser').val() };
+                sessionStorage.setItem('userInfo', JSON.stringify(oUserInfo));
+                window.location.replace("http://localhost:3000/chat");
+            });
+        });
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function showPosition(position) {
+            oPosition = { "latitude": position.coords.latitude, "longitude": position.coords.longitude };
+        }
+    </script>
+</head>
+  <body>
+      <div id="divSignUp">
+
+          <br><br><br><br><br><br><h2 style="color:white; text-align:center">Let's Sign up for Chatting</h2><br>
+          <form action="#" method="post" style="max-width:500px; margin:auto" class="back">
+
+              <div class="input-container">
+                  <header>
+                      <img src="images/wp.jpg" width="200" height="100">
+                  </header>
+              </div>
+              <div class="input-container">
+                  <i class="fa fa-user icon"></i>
+                  <input class="input-field" type="text" required="required" placeholder="User Full Name" id="txtUser" name="name">
+              </div>
+              <div class="input-container">
+                  <i class="fa fa-envelope icon"></i>
+                  <input class="input-field" type="text" placeholder="Email/Phone number" id="email" name="email">
+              </div>
+              <div class="input-container">
+                  <i class="fa fa-key icon"></i>
+                  <input class="input-field" type="password" placeholder="Password" id="password" name="password">
+              </div>
+              <div>
+                  <button id="btnSignUp" type="button" class="btn">Sign up</button>
+              </div>
+          </form>
+
+          <!--<input type="text" id="txtUser" /><input type="button" id="btnSignUp" value="Log in">-->
+      </div>
+    
+  </body>
+</html>

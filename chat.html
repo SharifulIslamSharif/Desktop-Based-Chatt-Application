@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO chat</title>
+    <!--<script src="script.js"></script>-->
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="shortcut icon" href="images/Graphicloads-100-Flat-2-Chat-2.ico">
+    <link rel="shortcut icon" href="images/backround.png">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+                body {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 97vh;
+                    background-image: var(--body-bg);
+                    font-family: Helvetica, sans-serif;
+                }
+
+                .msger {
+                    display: flex;
+                    flex-flow: column wrap;
+                    justify-content: space-between;
+                    width: 100%;
+                    max-width: 867px;
+                    margin: 25px 10px;
+                    height: calc(100% - 50px);
+                    border: var(--border);
+                    border-radius: 5px;
+                    background: var(--msger-bg);
+                    box-shadow: 0 15px 15px -5px rgba(0, 0, 0, 0.2);
+                }
+
+                .msger-header {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 10px;
+                    border-bottom: var(--border);
+                    background: darkcyan;
+                    color: black;
+                }
+
+                .msger-chat {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 10px;
+                }
+
+
+                .msger-inputarea {
+                    display: flex;
+                    padding:10px;
+                    border-top: var(--border);
+                    background: darkcyan;
+                }
+
+                    .msger-inputarea * {
+                        padding: 10px;
+                        border: none;
+                        border-radius: 3px;
+                        font-size: 1em;
+                    }
+
+                .msger-input {
+                    flex: 1;
+                    background: #ddd;
+                }
+
+                .msger-send-btn {
+                    margin-left: 10px;
+                    background: #ddd;
+                    color: #fff;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: background 0.23s;
+                }
+
+                    .msger-send-btn:hover {
+                        background: firebrick;
+                    }
+
+        .msger-chat {
+            background-color: #fcfcfe;
+            background-image: url("images/backround.png");
+        }
+
+        #dropContainer {
+         margin-left: 300px
+        }
+
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <script>
+        $(function () {
+            var strUserInfo = sessionStorage.getItem('userInfo');
+            var oUserInfo = JSON.parse(strUserInfo);
+            getAddress(oUserInfo.latitude, oUserInfo.longitude);
+            if (oUserInfo === null) {
+                window.location.replace("http://localhost:3000");
+            }
+            $('#user').text(oUserInfo.userId);
+            $('#lat').text(oUserInfo.latitude);
+            $('#lon').text(oUserInfo.longitude);
+
+            var socket = io();
+            $('#formMessage').submit(function (e) {
+                e.preventDefault(); // prevents page reloading
+                if ($('#m').val() === null || $('#m').val() === '') {
+                    alert('Type a word to send message');
+                } else {
+                    var currentDateTime = new Date();
+                    var newDateTime = currentDateTime.toLocaleDateString() + ' ' + currentDateTime.toLocaleTimeString();
+                    var oMessage = { "userId": oUserInfo.userId, "message": $('#m').val(), "dateTime": newDateTime };
+                    socket.emit('chat message', oMessage);
+                    $('#m').val('');
+                    return false;
+                }
+            });
+
+            socket.on('chat message', function (msg) {
+                var htmlElements = '<strong>' + msg.userId + '</strong>: ' + msg.message + '<br/><span style="color:#7f8680">' + msg.dateTime + '</span>';
+                $('#messages').append($('<li>').html(htmlElements));
+            });
+
+            var mapURL = 'https://maps.google.com/maps?&q=' + oUserInfo.latitude + ',' + oUserInfo.longitude + '&ie=UTF8&z=14&iwloc=B&output=embed';
+            //var mapURL = 'https://maps.google.com/maps?width=100%&amp;height=600&amp;hl=en&amp;q='+oUserInfo.latitude+','+oUserInfo.longitude+';ie=UTF8&amp;t=&amp;z=14&amp;iwloc=B&amp;output=embed';
+            $("iframe").attr("src", mapURL);
+
+            //form Submit
+            $("#formFileUpload").submit(function (evt) {
+                evt.preventDefault();
+                var formData = new FormData($(this)[0]);
+                var f = $('#fileInput').val();
+                if ($('#fileInput').val() === '') {
+                    alert('Attach a file to upload');
+                } else {
+                    $.ajax({
+                        url: 'uploadfile',
+                        type: 'POST',
+                        data: formData,
+                        async: false,
+                        cache: false,
+                        contentType: false,
+                        enctype: 'multipart/form-data',
+                        processData: false,
+                        success: function (response) {
+                            var res = JSON.parse(response);
+                            //alert(res.filePath);
+                            var currentDateTime = new Date();
+                            var newDateTime = currentDateTime.toLocaleDateString() + ' ' + currentDateTime.toLocaleTimeString();
+                            var oMessage = { "userId": oUserInfo.userId, "message": '<a href="' + res.filePath + '" target="_blank">' + res.fileName + '</a>', "dateTime": newDateTime };
+                            socket.emit('chat message', oMessage);
+                            $('#fileInput').val('');
+                        }
+                    });
+                    return false;
+                }
+
+            });
+
+        });
+
+        function getAddress(lat, lon) {
+            var oJson = {};
+            var theUrl = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon + '&addressdetails=1';
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function () {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                    oJson = JSON.parse(xmlHttp.responseText);
+                $('#address').text(oJson.display_name);
+            }
+            xmlHttp.open("GET", theUrl, true); // true for asynchronous
+            xmlHttp.send(null);
+        }
+
+    </script>
+</head>
+<body>
+    <section class="msger">
+        <header class="msger-header">
+            <div class="msger-header-title" id="divUser">
+                <div style="color:aqua; font-size:21px">
+                    WhatsApp SimpleChat Sevrice<br>
+                </div>
+                <strong>Welcome: </strong><span id="user"></span>
+            </div>
+        </header>
+
+        <main class="msger-chat">
+            <div style="background-image: url(https://image.flaticon.com/icons/svg/145.svg)"></div>
+
+            <div id="divUser">
+                <div style="width: 50%">
+                    <div>
+                        <h2>Your present location is here... </h2>
+                    </div>
+
+                    <iframe width="200%" height="250" src="" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"><a href="https://www.maps.ie/coordinates.html">find my coordinates</a></iframe>
+                </div>
+                <br />
+                <strong>Latitude: </strong><span id="lat"></span>
+                <strong>Longitude: </strong><span id="lon"></span>
+                <br />
+                <strong>Address: </strong><span id="address"></span>
+            </div>
+            <ul id="messages"></ul>
+        </main>
+
+        <form action="" id="formMessage" class="msger-inputarea">
+            <input id="m" autocomplete="off" type="text" class="msger-input" placeholder="Enter your message...">
+            <button class="msger-send-btn">
+                <i class="fa fa-send" style="color:black; font-size:18px"></i>
+            </button>
+        </form>
+        <form class="msger-inputarea" id="formFileUpload">
+            <input type="file" name="fileInput" id="fileInput" multiple>
+            <div id="dropContainer" style="border-color:#fff;">
+                <!--Drop your file here-->
+                <input type="submit" value="Upload">
+
+            </div>
+        </form>
+
+    </section>
+
+    <script>
+        // dragover and dragenter events need to have 'preventDefault' called
+        // in order for the 'drop' event to register.
+        // See: https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Drag_operations#droptargets
+        dropContainer.ondragover = dropContainer.ondragenter = function (evt) {
+            evt.preventDefault();
+        };
+
+        dropContainer.ondrop = function (evt) {
+            // pretty simple -- but not for IE :(
+            fileInput.files = evt.dataTransfer.files;
+
+            // If you want to use some of the dropped files
+            const dT = new DataTransfer();
+            dT.items.add(evt.dataTransfer.files[0]);
+            //dT.items.add(evt.dataTransfer.files[3]);
+            fileInput.files = dT.files;
+
+            evt.preventDefault();
+        };
+    </script>
+</body>
+</html>
